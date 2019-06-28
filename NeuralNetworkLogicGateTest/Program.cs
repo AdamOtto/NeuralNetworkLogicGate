@@ -33,11 +33,7 @@ namespace NeuralNetworkLogicGateTest
         static void Main(string[] args)
         {
             int numOfInputs = 2;
-            //int numOfHiddenLayers = 2;
-            //int numOfNeuronsPerHiddenLayer = 2;
-            //int numOfOutputs = 1;
-            //NeuralNetwork NN = new NeuralNetwork(numOfInputs, numOfHiddenLayers, numOfNeuronsPerHiddenLayer, numOfOutputs);
-            int[] NNArchitecture = new int[] { 1, 2, 4 };
+            int[] NNArchitecture = new int[] { 1,4,2};
             NeuralNetwork NN = new NeuralNetwork(NNArchitecture, numOfInputs);
 
             bool exit = false;
@@ -59,6 +55,7 @@ namespace NeuralNetworkLogicGateTest
                 new double[2] { -1, 1 },
                 new double[2] { 1, -1 },
                 new double[2] { 1, 1 }
+                //Binary Inputs
                 //new double[1] { 1 },
                 //new double[1] { 0 }
             };
@@ -66,10 +63,10 @@ namespace NeuralNetworkLogicGateTest
             double[][] expectedOutputs =
             //AND
             new double[][] {
-                new double[] { 0 },
-                new double[] { 0 },
-                new double[] { 0 },
-                new double[] { 1 }
+                new double[] { 0.01 },
+                new double[] { 0.01 },
+                new double[] { 0.01 },
+                new double[] { 0.99 }
             };
             //AND, NAND
             //new double[][] {
@@ -78,32 +75,19 @@ namespace NeuralNetworkLogicGateTest
             //    new double[] { 0, 1},
             //    new double[] { 1, 0}
             //};
-            //XOR, XNOR
+            //OR, NOR
             //new double[][] {
-            //    new double[] { 0.001, 0.999},
-            //    new double[] { 0.999, 0.001 },
-            //    new double[] { 0.999, 0.001 },
-            //    new double[] { 0.001, 0.999 }
-            //};
-            //XOR
-            //new double[][] {
-            //    new double[] { 0.001 },
-            //    new double[] { 0.999 },
-            //    new double[] { 0.999 },
-            //    new double[] { 0.001 }
-            //};
-            //AND, XOR, OR
-            //new double[][] {
-            //    new double[] { 0, 0, 0 },
-            //    new double[] { 0, 1, 1 },
-            //    new double[] { 0, 1, 1 },
-            //    new double[] { 1, 0, 1 }
+            //    new double[] { 0, 1 },
+            //    new double[] { 1, 0 },
+            //    new double[] { 1, 0 },
+            //    new double[] { 1, 0 }
             //};
             //Spit out the same output as the input
             //new double[][] {
             //    new double[] { 1 },
             //    new double[] { 0 }
             //};
+
             timesTrained = train(trainToo, epoch, randomTrain, NN, inputs, expectedOutputs, learningRate);
 
             do
@@ -165,34 +149,11 @@ class NeuralNetwork
     /// <summary>
     /// Create a Neural Network.
     /// </summary>
-    /// <param name="NetworkSetup">index 0 is the number of output neurons, all other indexes will hidden layer neurons</param>
+    /// <param name="NetworkSetup">index 0 is the number of output neurons, all other indexes are hidden layer neurons</param>
     /// <param name="numberOfInputs">The number of inputs</param>
     public NeuralNetwork(int[] NetworkSetup, int numberOfInputs)
     {
         inputLayer = new double[numberOfInputs];
-        /*
-        if (hiddenLayerNumber < 1)
-            throw new Exception("NeuralNetwork: Hidden layer number must be greater than 0.");
-        hiddenLayer = new Neuron[hiddenLayerNumber][];
-        for (int i = 0; i < hiddenLayerNumber; i++)
-        {
-            //double bias = (rand.NextDouble() * 6.0) - 3.0; //Should give double between -3 and 3
-            hiddenLayer[i] = new Neuron[neuronsPerHiddenLayer];
-            for (int j = 0; j < neuronsPerHiddenLayer; j++)
-            {
-                if (i == hiddenLayerNumber - 1)
-                    hiddenLayer[i][j] = new Neuron(numberOfInputs, rand, 0, "IL[" + i.ToString() + "][" + j.ToString() + "]");
-                else
-                    hiddenLayer[i][j] = new Neuron(neuronsPerHiddenLayer, rand, 0, "HL[" + i.ToString() + "][" + j.ToString() + "]");
-            }
-        }
-
-        outputLayer = new Neuron[outputNeurons];
-        for (int i = 0; i < outputNeurons; i++)
-        {
-            outputLayer[i] = new Neuron(neuronsPerHiddenLayer, rand, 0, "OL[" + i.ToString() + "]");
-        }
-        */
         if (NetworkSetup.Length < 1 || NetworkSetup[1] == 0)
             throw new Exception("NeuralNetwork: Must have neurons in the hidden layer.");
         outputLayer = new Neuron[NetworkSetup[0]];
@@ -215,6 +176,7 @@ class NeuralNetwork
         epoch = 0;
     }
 
+    //These two constructors is to make the Neural Network serializable.
     private NeuralNetwork(int trn, int epch, double[] inlayer, Neuron[][] HL, Neuron[] outLayer)
     {
         train = trn;
@@ -223,10 +185,13 @@ class NeuralNetwork
         hiddenLayer = HL;
         outputLayer = outLayer;
     }
-
     private NeuralNetwork()
     { }
 
+    /// <summary>
+    /// Returns the values of the output layer.  Should be used after FeedForward().
+    /// </summary>
+    /// <returns></returns>
     public double[] getOutputs()
     {
         double[] retVal = new double[outputLayer.Length];
@@ -237,9 +202,10 @@ class NeuralNetwork
         return retVal;
     }
 
-    //Change of plans.  Instead of input -> HL0 - HL1 -> ... -> HLn -> Output
-    //Go with Output <- HL0 <- HL1 <- ... <- HLn <- Input
-    //This'll make things easier to read, and reduce chance of "out of bounds" error.
+    /// <summary>
+    /// Calculates the output for each layer of the Neural Network.  After calling this function, use getOutputs() to collect the output of the network.
+    /// </summary>
+    /// <param name="inputs">Inputs for the Neural Network.</param>
     public void FeedForward(double[] inputs)
     {
         if (inputs.Length != inputLayer.Length)
@@ -266,6 +232,11 @@ class NeuralNetwork
         }
     }
 
+    /// <summary>
+    /// Stores the outputs of a hidden layer into a double array. 
+    /// </summary>
+    /// <param name="layer">The layer you'd like the outputs of.</param>
+    /// <returns></returns>
     private double[] getLayerOutput(int layer)
     {
         int size = hiddenLayer[layer].Length;
@@ -277,20 +248,18 @@ class NeuralNetwork
         return retVal;
     }
 
-    private double sigmoidFunction(double x)
-    {
-        return 1 / (1 + Math.Exp(-x));
-    }
-
     private double inverseSigmoid(double x)
     {
         //double d = sigmoidFunction(x);
         return x * (1 - x);
     }
 
-    //Change of plans.  Instead of input -> HL0 - HL1 -> ... -> HLn -> Output
-    //Go with Output <- HL0 <- HL1 <- ... <- HLn <- Input
-    //This'll make things easier to read, and reduce chance of "out of bounds" error.
+    /// <summary>
+    /// Backpropagation so the Neural Network can learn.
+    /// </summary>
+    /// <param name="expectedOutputs">A double array of the expected outputs</param>
+    /// <param name="learningRate">How quickly the network can learn.</param>
+    /// <param name="trainForEpochNum">How many training operations performed before weights are updated.</param>
     public void backpropagation(double[] expectedOutputs, double learningRate, int trainForEpochNum)
     {
         if (outputLayer.Length != expectedOutputs.Length)
@@ -303,22 +272,24 @@ class NeuralNetwork
             TotalError += Math.Pow((expectedOutputs[i] - outputLayer[i].getOutput), 2);
             for (int j = 0; j < hiddenLayer[0].Length; j++)
             {
-                double temp;
-                temp = -(expectedOutputs[i] - outputLayer[i].getOutput) * inverseSigmoid(outputLayer[i].getOutput) * hiddenLayer[0][j].getOutput;
-                outputLayer[i].addTrainingOperation(j, temp);
+                // Etotal/w = -(target - out) * out(1 - out) * outhln
+                outputLayer[i].addTrainingOperation(j, -(expectedOutputs[i] - outputLayer[i].getOutput) * inverseSigmoid(outputLayer[i].getOutput) * hiddenLayer[0][j].getOutput);
             }
         }
+        //Store total error.
         mostRecentTotalError = TotalError;
 
         //Calculate weight update for hidden layers.
         for (int i = 0; i < hiddenLayer.Length - 1; i++)
         {
+            //Calculates the total error for the layer
             massCalcOutputEffectOnError(i, expectedOutputs);
             for (int j = 0; j < hiddenLayer[i].Length; j++)
             {
                 double error = hiddenLayer[i][j].OutputEffectOnTotalError * inverseSigmoid(hiddenLayer[i][j].getOutput);
                 for (int k = 0; k < hiddenLayer[i][j].getWeightCount; k++)
                 {
+                    //Etotal/wn = Sum of total error * hout(1 - hout) * h+1out
                     hiddenLayer[i][j].addTrainingOperation(k, error * hiddenLayer[i + 1][k].getOutput);
                 }
 
@@ -334,13 +305,13 @@ class NeuralNetwork
             double error = hiddenLayer[il][j].OutputEffectOnTotalError * inverseSigmoid(hiddenLayer[il][j].getOutput);
             for (int k = 0; k < inputLayer.Length; k++)
             {
-                //if (Double.IsNaN(error * inputLayer[k]))
-                //    throw new Exception("addTrainingOperation: error value is NaN.");
+                //Etotal/wn = Sum of total error * hout(1 - hout) * h+1out
                 hiddenLayer[il][j].addTrainingOperation(k, error * inputLayer[k]);
             }
         }
 
         train++;
+        //update weights if we've reached an epoch.
         if (train % trainForEpochNum == 0)
         {
             epoch++;
@@ -349,23 +320,16 @@ class NeuralNetwork
             foreach (Neuron[] Layer in hiddenLayer)
                 foreach (Neuron N in Layer)
                 {
-                    //This switch block is for easy dubugging.
-                    /*
-                    switch (N.NeuronName[0])
-                    {
-                        case 'I':
-                            break;
-                        case 'H':
-                            break;
-                        case 'O':
-                            break;
-                    }
-                    */
                     N.UpdateWeights(learningRate);
                 }
         }
     }
 
+    /// <summary>
+    /// Calculates the total effect on error of each neuron in a layer.  Error is stored in the neuron.
+    /// </summary>
+    /// <param name="hiddenLayerIndex">Which hidden layer to calculate the effect on total error.  Should go from 0 -> n. </param>
+    /// <param name="expectedOutputs">Expected outputs for this training operation.</param>
     private void massCalcOutputEffectOnError(int hiddenLayerIndex, double[] expectedOutputs)
     {
         double sum = 0;
@@ -376,6 +340,7 @@ class NeuralNetwork
                 sum = 0;
                 for (int i = 0; i < outputLayer.Length; i++)
                 {
+                    //sum = -(target - outi) * outi(1 - outi) * HLi weightj
                     sum += -(expectedOutputs[i] - outputLayer[i].getOutput) * (outputLayer[i].getOutput * (1 - outputLayer[i].getOutput)) * outputLayer[i].getWeight(j);
                 }
                 hiddenLayer[hiddenLayerIndex][j].OutputEffectOnTotalError = sum;
@@ -388,6 +353,7 @@ class NeuralNetwork
                 sum = 0;
                 for (int j = 0; j < hiddenLayer[hiddenLayerIndex - 1].Length; j++)
                 {
+                    //sum = HLj-1 effectOnTotalError * HLj-1 weighti
                     sum += hiddenLayer[hiddenLayerIndex - 1][j].OutputEffectOnTotalError * hiddenLayer[hiddenLayerIndex - 1][j].getWeight(i);
                 }
                 hiddenLayer[hiddenLayerIndex][i].OutputEffectOnTotalError = sum;
@@ -437,23 +403,8 @@ class Neuron
             sum += inputs[i] * weight[i];
         }
 
-        //This switch block is for easy dubugging.
-        switch (this.neuronName[0])
-        {
-            case 'I':
-                break;
-            case 'H':
-                break;
-            case 'O':
-                break;
-        }
-
         sum += bias;
         output = sigmoidFunction(sum);
-        /*if (output >= 0.999)
-            output = 0.9;
-        else if (output <= 0.001)
-            output = 0.1;*/
         if (Double.IsNaN(output))
             throw new Exception("CalcNewOuput: Output is NaN, I don't know why.");
     }
@@ -461,12 +412,6 @@ class Neuron
     private double sigmoidFunction(double x)
     {
         return 1 / (1 + Math.Exp(-x));
-    }
-
-    private double inverseSigmoid(double x)
-    {
-        double d = sigmoidFunction(x);
-        return d * (1 - d);
     }
 
     public void adjustWeightsAndBias(double error, double[] inputs)
@@ -484,16 +429,6 @@ class Neuron
     {
         if (Double.IsNaN(error))
             throw new Exception("addTrainingOperation: error value is NaN.");
-        /*//This switch block is for easy dubugging.
-        switch (this.neuronName[0])
-        {
-            case 'I':
-                break;
-            case 'H':
-                break;
-            case 'O':
-                break;
-        }*/
         updateValues[weightIndex] += error;
         updateValuesCounter[weightIndex]++;
     }
@@ -501,15 +436,15 @@ class Neuron
     public void UpdateWeights(double learningRate)
     {
         //This switch block is for easy dubugging.
-        switch (this.neuronName[0])
-        {
-            case 'I':
-                break;
-            case 'H':
-                break;
-            case 'O':
-                break;
-        }
+        //switch (this.neuronName[0])
+        //{
+        //    case 'I':
+        //        break;
+        //    case 'H':
+        //        break;
+        //    case 'O':
+        //        break;
+        //}
 
         for (int i = 0; i < weight.Length; i++)
         {
@@ -518,12 +453,6 @@ class Neuron
             if (Double.IsNaN(weight[i]))
                 throw new Exception("CalcNewOuput: Output is NaN, I don't know why.");
             updateValuesCounter[i] = 0;
-            /*
-            if (weight[i] < 0)
-                weight[i] = 0;
-            if (weight[i] > 1)
-                weight[i] = 1;
-            */
         }
     }
 
